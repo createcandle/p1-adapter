@@ -1,0 +1,4 @@
+crcmod>=1.7
+pyserial>=3.1
+pycli-tools>=2.0.2
+smeterd

@@ -1,0 +1,74 @@
+{
+  "name": "p1-adapter",
+  "display_name": "P1",
+  "version": "0.0.1",
+  "description": "P1 add-on for Mozilla WebThings Gateway",
+  "author": "CandleSmartHome.com",
+  "main": "main.py",
+  "keywords": [
+    "mozilla",
+    "iot",
+    "adapter",
+    "p1",
+    "arduino"
+  ],
+  "homepage": "https://github.com/createcandle/p1-adapter",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/createcandle/p1-adapter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/createcandle/p1-adapter/issues"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "SHA256SUMS",
+    "lib",
+    "main.py",
+    "manifest.json",
+    "pkg/__init__.py",
+    "pkg/p1_adapter.py",
+	"pkg/tests.py",
+    "pkg/util.py"
+  ],
+  "moziot": {
+    "api": {
+      "min": 2,
+      "max": 2
+    },
+    "plugin": true,
+    "exec": "python3 {path}/main.py",
+    "config": {
+      "USB port": "USB port 1",
+      "Custom USB port command": ""
+    },
+    "schema": {
+      "type": "object",
+      "required": [
+        "USB port"
+      ],
+      "properties": {
+          "USB port": {
+            "description": "The addon will create a list of all connected USB devices, and pick the number from the list. You can find your device through trial and error.",
+            "enum": [
+              "USB port 1",
+              "USB port 2",
+              "USB port 3",
+  			  "USB port 4"
+            ],
+            "type": "string"
+          },
+          "Custom USB port command": {
+            "description": "For advanced users. Manually override which USB device you want to be used. An example would be '/dev/ttyUSB0' or '/dev/ttyUSB1'",
+            "type": "string"
+          },
+          "Debugging": {
+            "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
+            "type": "boolean"
+          }
+      }
+    }
+  }
+}
