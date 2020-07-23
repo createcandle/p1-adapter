@@ -111,8 +111,6 @@ class P1Adapter(Adapter):
                     self.thing = self.get_device("p1-device")
                 
                 
-
-                
                     # Start the clock
                     if self.DEBUG:
                         print("Starting the internal clock")
@@ -272,6 +270,7 @@ class P1Adapter(Adapter):
                                                         self.thing,
                                                         "kwh-total-consumed",
                                                         {
+                                                            '@type': 'LevelProperty',
                                                             'label': "Total consumed",
                                                             'type': 'number',
                                                             'unit': 'kwh',
@@ -653,6 +652,7 @@ class P1Device(Device):
         self._id = 'p1-device'
         self.id = 'p1-device'
         self.adapter = adapter
+        self._type.append('MultiLevelSensor')
 
         self.name = 'p1-device'
         self.title = 'Energy sensor'
@@ -660,7 +660,6 @@ class P1Device(Device):
 
         if self.adapter.DEBUG:
             print("Empty P1 thing has been created.")
-
 
 
 
