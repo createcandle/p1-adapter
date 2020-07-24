@@ -2,7 +2,6 @@
 
 version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
-
 # Clean up from previous releases
 rm -rf *.tgz package SHA256SUMS lib
 
@@ -12,8 +11,6 @@ else
   PYTHON_VERSION="$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d. -f 1-2)"
   TARFILE_SUFFIX="-${ADDON_ARCH}-v${PYTHON_VERSION}"
 fi
-
-
 
 # Prep new package
 mkdir lib package
@@ -39,5 +36,6 @@ TARFILE="p1-adapter-${version}${TARFILE_SUFFIX}.tgz"
 tar czf ${TARFILE} package
 
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
-sha256sum ${TARFILE}
-#rm -rf SHA256SUMS package
+cat ${TARFILE}.sha256sum
+
+rm -rf SHA256SUMS package
