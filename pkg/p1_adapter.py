@@ -390,7 +390,8 @@ class P1Adapter(Adapter):
                                 
                         
                 except Exception as ex:
-                    print("Energy use update error: " + str(ex))
+                    if self.DEBUG:
+                        print("Energy use update error: " + str(ex))
                 
                 
                 
@@ -466,29 +467,29 @@ class P1Adapter(Adapter):
                             instant_total_watts += new_value
                      
                      
-                     if 'l3' in instant:
-                         if 'watts' in instant['l3']:
-                             targetProperty = self.thing.find_property('instant-l3-watts')
-                             if targetProperty == None:
-                                 if self.DEBUG:
-                                     print("-instant-l3-watts property did not exist yet. Creating it now.")
-                                 self.thing.properties["instant-l3-watts"] = P1Property(
-                                                 self.thing,
-                                                 "instant-l3-watts",
-                                                 {
-                                                     'label': "L3 wattage",
-                                                     'type': 'number',
-                                                     'unit': 'Watt',
-                                                     'readOnly': True,
-                                                     'multipleOf':0.001,
-                                                 },
-                                                 instant['l3']['watts'])
-                                 targetProperty = self.thing.find_property('instant-l3-watts')
-                                
-                             new_value = get_int_or_float(instant['l3']['watts'])
-                             targetProperty.update(new_value)
-                            
-                             instant_total_watts += new_value
+                    if 'l3' in instant:
+                        if 'watts' in instant['l3']:
+                            targetProperty = self.thing.find_property('instant-l3-watts')
+                            if targetProperty == None:
+                                if self.DEBUG:
+                                    print("-instant-l3-watts property did not exist yet. Creating it now.")
+                            self.thing.properties["instant-l3-watts"] = P1Property(
+                                            self.thing,
+                                            "instant-l3-watts",
+                                            {
+                                                'label': "L3 wattage",
+                                                'type': 'number',
+                                                'unit': 'Watt',
+                                                'readOnly': True,
+                                                'multipleOf':0.001,
+                                            },
+                                            instant['l3']['watts'])
+                            targetProperty = self.thing.find_property('instant-l3-watts')
+
+                            new_value = get_int_or_float(instant['l3']['watts'])
+                            targetProperty.update(new_value)
+
+                            instant_total_watts += new_value
                              
                              
                     if instant_total_watts != 0:
@@ -517,7 +518,8 @@ class P1Adapter(Adapter):
                              
                         
                 except Exception as ex:
-                    print("Instantaneous energy use update error: " + str(ex))
+                    if self.DEBUG:
+                        print("Instantaneous energy use update error: " + str(ex))
                 
                 
                 
@@ -566,7 +568,8 @@ class P1Adapter(Adapter):
                         targetProperty.update(new_value)
                     
                 except Exception as ex:
-                    print("Gas update error: " + str(ex))
+                    if self.DEBUG:
+                        print("Gas update error: " + str(ex))
 
 
                 if property_counter_before != len(self.thing.properties):
