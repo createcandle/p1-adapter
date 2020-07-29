@@ -519,7 +519,7 @@ class P1Adapter(Adapter):
                         
                 except Exception as ex:
                     if self.DEBUG:
-                        print("Instantaneous energy use update error: " + str(ex))
+                        print("Instantaneous energy use update error (your device simply may not support this): " + str(ex))
                 
                 
                 
