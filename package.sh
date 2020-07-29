@@ -13,8 +13,6 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-v${PYTHON_VERSION}"
 fi
 
-
-
 # Prep new package
 mkdir lib package
 
@@ -39,5 +37,6 @@ TARFILE="p1-adapter-${version}${TARFILE_SUFFIX}.tgz"
 tar czf ${TARFILE} package
 
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
-sha256sum ${TARFILE}
+cat ${TARFILE}.sha256sum
+
 #rm -rf SHA256SUMS package
