@@ -23,12 +23,12 @@
     "schema": {
       "properties": {
         "USB port": {
-          "description": "The addon will create a list of all connected USB devices, and pick the number from the list. You can find your device through trial and error.",
+          "description": "The addon will create a list of all connected USB devices, and pick the number from the list. You can find your device through trial and error. If only one USB serial device is connected, that one will automatically be selected.",
           "enum": [
             "USB port 1",
             "USB port 2",
             "USB port 3",
-			"USB port 4"
+						"USB port 4"
           ],
           "type": "string"
         },
