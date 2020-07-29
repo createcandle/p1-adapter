@@ -69,6 +69,7 @@ class P1Adapter(Adapter):
         self.first_request_done = False
         self.initial_serial_devices = set()
         self.running = True
+        self.usb_override = False
         self.usb_port = "/dev/ttyUSB0"
         
         self.previous_consumed_total = None
@@ -87,6 +88,11 @@ class P1Adapter(Adapter):
             print("Error loading config (and initialising PyP1 library?): " + str(ex))
 
         #self.DEBUG = True
+        
+        # If only one USB serial device is available, we pick that one anyway, regardless of what the user has selected in the config.
+        if len(self.initial_serial_devices) == 1 and self.usb_override == False:
+            self.usb_port = self.initial_serial_devices[0]['port_id']
+        
 
         try:
             #Serial = serial.Serial
@@ -158,6 +164,14 @@ class P1Adapter(Adapter):
                     print("packet = " + str(packet))
                 
                 property_counter_before = len(self.thing.properties)
+
+
+
+
+
+                #
+                #  KWH
+                #
 
                 try:
                     kwh = packet['kwh']
@@ -373,9 +387,145 @@ class P1Adapter(Adapter):
                             
                         new_value = get_int_or_float(kwh['tariff'])
                         targetProperty.update(new_value)
+                                
                         
                 except Exception as ex:
                     print("Energy use update error: " + str(ex))
+                
+                
+                
+                
+                
+                
+                
+                
+                #
+                #  INSTANTANEOUS POWER
+                #
+                
+                
+                try:
+                    instant = packet['instantaneous']
+                    
+                    instant_total_watts = 0
+                    
+                    if self.DEBUG:
+                        print("--------INSTANTANEOUS---------")
+    
+                        for key, value in instant.items():
+                            print(key, ' : ', value)
+    
+                        print("--------------------")
+                    
+                    if 'l1' in instant:
+                        if 'watts' in instant['l1']:
+                            targetProperty = self.thing.find_property('instant-l1-watts')
+                            if targetProperty == None:
+                                if self.DEBUG:
+                                    print("-instant-l1-watts property did not exist yet. Creating it now.")
+                                self.thing.properties["instant-l1-watts"] = P1Property(
+                                                self.thing,
+                                                "instant-l1-watts",
+                                                {
+                                                    'label': "L1 wattage",
+                                                    'type': 'number',
+                                                    'unit': 'Watt',
+                                                    'readOnly': True,
+                                                    'multipleOf':0.001,
+                                                },
+                                                instant['l1']['watts'])
+                                targetProperty = self.thing.find_property('instant-l1-watts')
+                                
+                            new_value = get_int_or_float(instant['l1']['watts'])
+                            targetProperty.update(new_value)
+                            
+                            instant_total_watts += new_value
+                            
+                    if 'l2' in instant:
+                        if 'watts' in instant['l2']:
+                            targetProperty = self.thing.find_property('instant-l2-watts')
+                            if targetProperty == None:
+                                if self.DEBUG:
+                                    print("-instant-l2-watts property did not exist yet. Creating it now.")
+                                self.thing.properties["instant-l2-watts"] = P1Property(
+                                                self.thing,
+                                                "instant-l2-watts",
+                                                {
+                                                    'label': "L2 wattage",
+                                                    'type': 'number',
+                                                    'unit': 'Watt',
+                                                    'readOnly': True,
+                                                    'multipleOf':0.001,
+                                                },
+                                                instant['l2']['watts'])
+                                targetProperty = self.thing.find_property('instant-l2-watts')
+                                
+                            new_value = get_int_or_float(instant['l2']['watts'])
+                            targetProperty.update(new_value)
+                            
+                            instant_total_watts += new_value
+                     
+                     
+                     if 'l3' in instant:
+                         if 'watts' in instant['l3']:
+                             targetProperty = self.thing.find_property('instant-l3-watts')
+                             if targetProperty == None:
+                                 if self.DEBUG:
+                                     print("-instant-l3-watts property did not exist yet. Creating it now.")
+                                 self.thing.properties["instant-l3-watts"] = P1Property(
+                                                 self.thing,
+                                                 "instant-l3-watts",
+                                                 {
+                                                     'label': "L3 wattage",
+                                                     'type': 'number',
+                                                     'unit': 'Watt',
+                                                     'readOnly': True,
+                                                     'multipleOf':0.001,
+                                                 },
+                                                 instant['l3']['watts'])
+                                 targetProperty = self.thing.find_property('instant-l3-watts')
+                                
+                             new_value = get_int_or_float(instant['l3']['watts'])
+                             targetProperty.update(new_value)
+                            
+                             instant_total_watts += new_value
+                             
+                             
+                    if instant_total_watts != 0:
+                        targetProperty = self.thing.find_property('instant-total-watts')
+                        if targetProperty == None:
+                            if self.DEBUG:
+                                print("-instant-total-watts property did not exist yet. Creating it now.")
+                            
+                            self.thing._type.append('EnergyMonitor')   
+                            self.thing.properties["instant-total-watts"] = P1Property(
+                                            self.thing,
+                                            "instant-total-watts",
+                                            {
+                                                '@type': 'InstantaneousPowerProperty',
+                                                'label': "Wattage",
+                                                'type': 'number',
+                                                'unit': 'Watt',
+                                                'readOnly': True,
+                                                'multipleOf':0.001,
+                                            },
+                                            instant_total_watts)
+                            targetProperty = self.thing.find_property('instant-total-watts')
+                           
+                        new_value = get_int_or_float(instant_total_watts)
+                        targetProperty.update(instant_total_watts)
+                             
+                        
+                except Exception as ex:
+                    print("Instantaneous energy use update error: " + str(ex))
+                
+                
+                
+                
+                
+                #
+                #  GAS
+                #
                 
                 try:
                     gas = packet['gas']
@@ -622,6 +772,7 @@ class P1Adapter(Adapter):
         try:
             if 'Custom USB port command' in config:
                 if str(config['Custom USB port command']) != "":
+                    self.usb_override = True
                     self.usb_port = str(config['Custom USB port command'])
                 else:
                     print("Custom USB port command was empty")
