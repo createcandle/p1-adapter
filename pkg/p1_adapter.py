@@ -63,11 +63,9 @@ class P1Adapter(Adapter):
 
         self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'p1-adapter')
 
-        #self.temperature_unit = 'degree celsius'
         self.DEBUG = True
-        #self.show_connection_status = True
         self.first_request_done = False
-        self.initial_serial_devices = set()
+        self.initial_serial_devices = []
         self.running = True
         self.usb_override = False
         self.usb_port = "/dev/ttyUSB0"
@@ -87,27 +85,22 @@ class P1Adapter(Adapter):
         except Exception as ex:
             print("Error loading config (and initialising PyP1 library?): " + str(ex))
 
-        #self.DEBUG = True
         
         # If only one USB serial device is available, we pick that one anyway, regardless of what the user has selected in the config.
-        if len(self.initial_serial_devices) == 1 and self.usb_override == False:
-            self.usb_port = self.initial_serial_devices[0]['port_id']
+        try:
+            if len(self.initial_serial_devices) == 1 and self.usb_override == False:
+                self.usb_port = self.initial_serial_devices[0]
+                print("only one Serial USB device found, selecting that one.")
+        except Exception as ex:
+            print("Error with auto selection of USB port: " + str(ex))
         
 
         try:
-            #Serial = serial.Serial
-
-            #self.serial.Serial = SerialMock
-            #self.serial = SerialMock
+            print("Attempting to start P1 connection with USB port: " + self.usb_port)
             self.meter = SmartMeter(self.usb_port)
             #print("self.meter is now: " + str(self.meter))
             
             try:
-
-                #packet = self.meter.read_one_packet()
-                #if self.DEBUG:
-                #    print("packet = " + str(packet))
-            
                 # Create the p1 device, and if succesful, start the internal clock
                 try:
                     p1_device = P1Device(self)
@@ -572,6 +565,98 @@ class P1Adapter(Adapter):
                         print("Gas update error: " + str(ex))
 
 
+
+
+
+                try:
+                    if seconds_counter > 60:
+                        seconds_counter = 0
+                        minutes_counter += 1
+                        #print("")
+                        #print("MINUTE")
+                        #print("")
+                        #if self.DEBUG:
+                
+                                 
+                    
+                        if minutes_counter > 60: # every hour
+                            minutes_counter = 0
+                            #print("total consumed = " + str(consumed_total))
+                    
+                            consumed_delta = consumed_total - self.previous_consumed_total
+                            self.previous_consumed = consumed_total
+                    
+                            produced_delta = produced_total - self.previous_produced_total
+                            self.previous_produced_total = produced_total                    
+                    
+                            gas_delta = gas_total - self.previous_gas_total
+                            self.previous_gas_total = gas_total
+                    
+                    
+                            # Hourly KWH consumption
+                            targetProperty = self.thing.find_property('kwh-hourly-consumed')
+                            if targetProperty == None:
+                                self.thing.properties["kwh-hourly-consumed"] = P1Property(
+                                                self.thing,
+                                                "kwh-hourly-consumed",
+                                                {
+                                                    'label': "Hourly consumption",
+                                                    'type': 'number',
+                                                    'unit': 'kwh',
+                                                    'readOnly': True,
+                                                    'multipleOf':0.001,
+                                                },
+                                                consumed_delta)
+            
+                                targetProperty = self.thing.find_property('kwh-total-consumed')
+            
+                            targetProperty.update(consumed_delta)
+                    
+                            # Hourly KWH production
+                            targetProperty = self.thing.find_property('kwh-hourly-produced')
+                            if targetProperty == None:
+                                self.thing.properties["kwh-hourly-produced"] = P1Property(
+                                                self.thing,
+                                                "kwh-hourly-produced",
+                                                {
+                                                    'label': "Hourly production",
+                                                    'type': 'number',
+                                                    'unit': 'kwh',
+                                                    'readOnly': True,
+                                                    'multipleOf':0.001,
+                                                },
+                                                produced_delta)
+            
+                                targetProperty = self.thing.find_property('kwh-total-consumed')
+            
+                            targetProperty.update(produced_delta)
+                    
+                            # Hourly GAS consumption
+                            targetProperty = self.thing.find_property('gas-hourly')
+                            if targetProperty == None:
+                                self.thing.properties["gas-hourly"] = P1Property(
+                                                self.thing,
+                                                "gas-hourly",
+                                                {
+                                                    'label': "Hourly gas consumption",
+                                                    'type': 'number',
+                                                    'unit': 'm3',
+                                                    'readOnly': True,
+                                                    'multipleOf':0.001,
+                                                },
+                                                gas_delta)
+            
+                                targetProperty = self.thing.find_property('gas-hourly')
+            
+                            targetProperty.update(gas_delta)
+
+                except Exception as ex:
+                    if self.DEBUG:
+                        print("Hourly values update error: " + str(ex))
+
+
+
+                # If the amount of properties has increased, tell the Gateway about this.
                 if property_counter_before != len(self.thing.properties):
                     self.handle_device_added(self.thing)
 
@@ -586,88 +671,28 @@ class P1Adapter(Adapter):
                     self.thing.connected_notify(False)
                 except Exception as ex:
                     print("Error updating connection status: " + str(ex))
-
-
-            if seconds_counter > 60:
-                seconds_counter = 0
-                minutes_counter += 1
-                #print("")
-                #print("MINUTE")
-                #print("")
-                #if self.DEBUG:
                 
-                                 
-                    
-                if minutes_counter > 60: # every hour
-                    minutes_counter = 0
-                    #print("total consumed = " + str(consumed_total))
-                    
-                    consumed_delta = consumed_total - self.previous_consumed_total
-                    self.previous_consumed = consumed_total
-                    
-                    produced_delta = produced_total - self.previous_produced_total
-                    self.previous_produced_total = produced_total                    
-                    
-                    gas_delta = gas_total - self.previous_gas_total
-                    self.previous_gas_total = gas_total
-                    
-                    
-                    # Hourly KWH consumption
-                    targetProperty = self.thing.find_property('kwh-hourly-consumed')
-                    if targetProperty == None:
-                        self.thing.properties["kwh-hourly-consumed"] = P1Property(
-                                        self.thing,
-                                        "kwh-hourly-consumed",
-                                        {
-                                            'label': "Hourly consumption",
-                                            'type': 'number',
-                                            'unit': 'kwh',
-                                            'readOnly': True,
-                                            'multipleOf':0.001,
-                                        },
-                                        consumed_delta)
-            
-                        targetProperty = self.thing.find_property('kwh-total-consumed')
-            
-                    targetProperty.update(consumed_delta)
-                    
-                    # Hourly KWH production
-                    targetProperty = self.thing.find_property('kwh-hourly-produced')
-                    if targetProperty == None:
-                        self.thing.properties["kwh-hourly-produced"] = P1Property(
-                                        self.thing,
-                                        "kwh-hourly-produced",
-                                        {
-                                            'label': "Hourly production",
-                                            'type': 'number',
-                                            'unit': 'kwh',
-                                            'readOnly': True,
-                                            'multipleOf':0.001,
-                                        },
-                                        produced_delta)
-            
-                        targetProperty = self.thing.find_property('kwh-total-consumed')
-            
-                    targetProperty.update(produced_delta)
-                    
-                    # Hourly GAS consumption
-                    targetProperty = self.thing.find_property('gas-hourly')
-                    if targetProperty == None:
-                        self.thing.properties["gas-hourly"] = P1Property(
-                                        self.thing,
-                                        "gas-hourly",
-                                        {
-                                            'label': "Hourly gas consumption",
-                                            'type': 'number',
-                                            'unit': 'm3',
-                                            'readOnly': True,
-                                            'multipleOf':0.001,
-                                        },
-                                        gas_delta)
-            
-                        targetProperty = self.thing.find_property('gas-hourly')
-            
-                    targetProperty.update(gas_delta)
+                try:
+                    if str(ex).startswith('read failed: device reports readiness'):
+                        print("It's likely that the wrong USB port has been selected. Will attempt to switch.")
+                        print("len(self.initial_serial_devices) = " + str(len(self.initial_serial_devices)))
+                        print("self.initial_serial_devices = " + str(self.initial_serial_devices))
+                        print("str(self.initial_serial_devices[0]['port_id']) = " + str(self.initial_serial_devices[0]))
+                        
+                        if len(self.initial_serial_devices) > 1 and self.usb_port == str(self.initial_serial_devices[0]):
+                            self.usb_port = str(self.initial_serial_devices[1])
+                        elif len(self.initial_serial_devices) > 2 and self.usb_port == str(self.initial_serial_devices[1]):
+                            self.usb_port = str(self.initial_serial_devices[2])
+                        elif len(self.initial_serial_devices) > 1 and self.usb_port == str(self.initial_serial_devices[1]):
+                            self.usb_port = str(self.initial_serial_devices[0])
+                            
+                        print("Will try a new USB port: " + str(self.usb_port))
+                        self.meter = SmartMeter(self.usb_port)
+                        
+                except Exception as ex:
+                    print("Automatic switching to different USB port failed: " + str(ex))
+
+
                     
 
             time.sleep(1)
@@ -701,8 +726,9 @@ class P1Adapter(Adapter):
     def scan_usb_ports(self): # Scans for USB serial devices
         if self.DEBUG:
             print("Scanning USB serial devices")
-        initial_serial_devices = set()
-        result = {"state":"stable","port_id":[]}
+        #initial_serial_devices = set()
+        #result = {"state":"stable","port_id":[]}
+        self.initial_serial_devices = []
         
         try:    
             ports = prtlst.comports()
@@ -717,7 +743,7 @@ class P1Adapter(Adapter):
                     #    print("port: " + str(port[0]))
                     #    print("usb device description: " + str(port[1]))
                     if str(port[0]) not in self.initial_serial_devices:
-                        self.initial_serial_devices.add(str(port[0]))
+                        self.initial_serial_devices.append(str(port[0]))
                         
         except Exception as e:
             print("Error getting serial ports list: " + str(e))
@@ -758,15 +784,15 @@ class P1Adapter(Adapter):
         
         # USB port from dropdown
         try:
-            if 'USB Port' in config:
+            if 'USB port' in config:
                 if str(config['USB port']) == 'USB port 1':
-                    self.usb_port = self.initial_serial_devices[0]['port_id']
+                    self.usb_port = self.initial_serial_devices[0]
                 if str(config['USB port']) == 'USB port 2':
-                    self.usb_port = self.initial_serial_devices[1]['port_id']
+                    self.usb_port = self.initial_serial_devices[1]
                 if str(config['USB port']) == 'USB port 3':
-                    self.usb_port = self.initial_serial_devices[2]['port_id']
+                    self.usb_port = self.initial_serial_devices[2]
                 if str(config['USB port']) == 'USB port 4':
-                    self.usb_port = self.initial_serial_devices[3]['port_id']               
+                    self.usb_port = self.initial_serial_devices[3]         
         except Exception as ex:
             print("Error with USB port selection: " + str(ex))
     
