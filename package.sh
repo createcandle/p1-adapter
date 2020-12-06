@@ -1,10 +1,9 @@
 #!/bin/bash -e
 
-# Setup environment for building inside Dockerized toolchain
-[ $(id -u) = 0 ] && umask 0
-
 version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
+# Setup environment for building inside Dockerized toolchain
+[ $(id -u) = 0 ] && umask 0
 
 # Clean up from previous releases
 rm -rf *.tgz *.shasum package SHA256SUMS lib
