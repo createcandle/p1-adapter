@@ -3,7 +3,6 @@
 import os
 from os import path
 import sys
-
 sys.path.append(path.join(path.dirname(path.abspath(__file__)), 'lib'))
 
 #import json
@@ -33,15 +32,12 @@ from smeterd.meter import SmartMeter
 
 _TIMEOUT = 3
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
-
 _CONFIG_PATHS = [
     os.path.join(os.path.expanduser('~'), '.webthings', 'config'),
 ]
 
-if 'MOZIOT_HOME' in os.environ:
-    _CONFIG_PATHS.insert(0, os.path.join(os.environ['MOZIOT_HOME'], 'config'))
+if 'WEBTHINGS_HOME' in os.environ:
+    _CONFIG_PATHS.insert(0, os.path.join(os.environ['WEBTHINGS_HOME'], 'config'))
 
 
 
