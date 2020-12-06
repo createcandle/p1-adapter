@@ -1,4 +1,4 @@
-"""P1 adapter for Mozilla WebThings Gateway."""
+"""P1 adapter for WebThings Gateway."""
 
 import os
 from os import path
@@ -37,7 +37,7 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 _CONFIG_PATHS = [
-    os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'config'),
+    os.path.join(os.path.expanduser('~'), '.webthings', 'config'),
 ]
 
 if 'MOZIOT_HOME' in os.environ:
@@ -58,10 +58,11 @@ class P1Adapter(Adapter):
         print("Initialising P1 adapter")
         self.pairing = False
         self.name = self.__class__.__name__
+        self.addon_name = 'p1-adapter'
         Adapter.__init__(self, 'p1-adapter', 'p1-adapter', verbose=verbose)
         #print("Adapter ID = " + self.get_id())
 
-        self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'p1-adapter')
+        self.addon_path = os.path.join(self.user_profile['addonsDir'], self.addon_name)
 
         self.DEBUG = True
         self.first_request_done = False
